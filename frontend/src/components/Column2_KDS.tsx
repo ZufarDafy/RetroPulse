@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import type { Order, Language, KDSStatus } from '../types';
+import type { Order, Language, KDSStatus, MenuItem } from '../types';
 import { UI_TRANSLATIONS } from '../utils/translations';
+import { getLocalizedItemName } from '../utils/menuHelper';
 import { playTapSound, playKitchenBell } from '../utils/sound';
 import {
   ChefHat,
@@ -21,6 +22,7 @@ interface Column2KDSProps {
   onUpdateStatus: (orderId: string, status: KDSStatus) => void;
   onReprintReceipt: (orderId: string) => void;
   onViewReceipt: (order: Order) => void;
+  menuItems?: MenuItem[];
 }
 
 export const Column2_KDS: React.FC<Column2KDSProps> = ({
@@ -30,6 +32,7 @@ export const Column2_KDS: React.FC<Column2KDSProps> = ({
   onUpdateStatus,
   onReprintReceipt,
   onViewReceipt,
+  menuItems,
 }) => {
   const t = UI_TRANSLATIONS[language];
   const [filter, setFilter] = useState<'ALL' | 'PENDING' | 'PREPARING' | 'SERVED'>('ALL');
@@ -284,7 +287,7 @@ export const Column2_KDS: React.FC<Column2KDSProps> = ({
                           />
                           <div>
                             <span className="font-bold text-stone-900 group-hover:text-orange-600">
-                              {item.name}
+                              {getLocalizedItemName(item.menu_item_id, item.name, menuItems, language)}
                             </span>
                             {item.notes && (
                               <p className="text-[10px] text-orange-600 italic font-medium">

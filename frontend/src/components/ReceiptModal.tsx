@@ -1,6 +1,7 @@
 import React from 'react';
-import type { Order, Language } from '../types';
+import type { Order, Language, MenuItem } from '../types';
 import { UI_TRANSLATIONS } from '../utils/translations';
+import { getLocalizedItemName } from '../utils/menuHelper';
 import { X, Printer, CheckCircle, AlertTriangle, QrCode } from 'lucide-react';
 
 interface ReceiptModalProps {
@@ -8,6 +9,7 @@ interface ReceiptModalProps {
   onClose: () => void;
   onReprint?: (orderId: string) => void;
   language: Language;
+  menuItems?: MenuItem[];
 }
 
 export const ReceiptModal: React.FC<ReceiptModalProps> = ({
@@ -15,6 +17,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
   onClose,
   onReprint,
   language,
+  menuItems,
 }) => {
   if (!order) return null;
   const t = UI_TRANSLATIONS[language];
@@ -74,7 +77,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
           {order.items.map((item, idx) => (
             <div key={idx} className="space-y-0.5">
               <div className="flex justify-between text-stone-900 font-bold">
-                <span>{item.name}</span>
+                <span>{getLocalizedItemName(item.menu_item_id, item.name, menuItems, language)}</span>
                 <span>Rp {(item.price * item.quantity).toLocaleString('id-ID')}</span>
               </div>
               <div className="flex justify-between text-stone-500 text-[11px]">

@@ -22,6 +22,7 @@ import {
 } from './services/offlineQueue';
 import type { QueuedOfflineItem } from './services/offlineQueue';
 import { playSuccessChime, playWarningBeep } from './utils/sound';
+import { DEFAULT_MENU_ITEMS } from './utils/menuHelper';
 
 export const App: React.FC = () => {
   // Application State
@@ -38,7 +39,7 @@ export const App: React.FC = () => {
     setLanguageState(lang);
   };
   const [tableNumber, setTableNumber] = useState<string>('T-01');
-  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>(DEFAULT_MENU_ITEMS);
   const [orders, setOrders] = useState<Order[]>([]);
   const [chaosConfig, setChaosConfig] = useState<ChaosConfig>({
     wifi_offline: false,
@@ -433,6 +434,7 @@ export const App: React.FC = () => {
                 onUpdateStatus={handleUpdateKDSStatus}
                 onReprintReceipt={handleReprintReceipt}
                 onViewReceipt={(order) => setSelectedReceiptOrder(order)}
+                menuItems={menuItems}
               />
             </section>
           </div>
@@ -478,6 +480,7 @@ export const App: React.FC = () => {
                 onUpdateStatus={handleUpdateKDSStatus}
                 onReprintReceipt={handleReprintReceipt}
                 onViewReceipt={(order) => setSelectedReceiptOrder(order)}
+                menuItems={menuItems}
               />
             </section>
 
@@ -503,6 +506,7 @@ export const App: React.FC = () => {
         onClose={() => setSelectedReceiptOrder(null)}
         onReprint={handleReprintReceipt}
         language={language}
+        menuItems={menuItems}
       />
 
       {/* Onboarding Welcome & Baby Steps Guide Modal */}

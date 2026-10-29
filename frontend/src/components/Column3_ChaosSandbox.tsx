@@ -348,7 +348,7 @@ export const Column3_ChaosSandbox: React.FC<Column3ChaosSandboxProps> = ({
             </button>
             <button
               onClick={onClearLogs}
-              title="Bersihkan log"
+              title={language === 'id' ? 'Bersihkan log' : language === 'zh' ? '清空日志' : 'Clear logs'}
               className="p-1.5 rounded-xl bg-white hover:bg-rose-50 text-stone-600 hover:text-rose-600 border border-stone-200 transition-colors shadow-2xs"
             >
               <Trash2 className="w-3.5 h-3.5" />
@@ -376,11 +376,14 @@ export const Column3_ChaosSandbox: React.FC<Column3ChaosSandboxProps> = ({
                   : 'bg-rose-50 text-rose-700 border-rose-200';
 
               const timeStr =
-                new Date(log.timestamp).toLocaleTimeString('id-ID', {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                  second: '2-digit',
-                }) +
+                new Date(log.timestamp).toLocaleTimeString(
+                  language === 'id' ? 'id-ID' : language === 'zh' ? 'zh-CN' : 'en-US',
+                  {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                  }
+                ) +
                 `.${new Date(log.timestamp)
                   .getMilliseconds()
                   .toString()
@@ -420,7 +423,13 @@ export const Column3_ChaosSandbox: React.FC<Column3ChaosSandboxProps> = ({
                     <div className="p-2.5 rounded-xl bg-orange-50/70 border border-orange-200/80 text-[11px] text-stone-700 flex items-start gap-2 font-sans shadow-2xs">
                       <HelpCircle className="w-4 h-4 text-orange-600 flex-shrink-0 mt-0.5" />
                       <div>
-                        <span className="font-extrabold text-orange-900 block">Root-Cause Diagnosis:</span>
+                        <span className="font-extrabold text-orange-900 block">
+                          {language === 'id'
+                            ? 'Diagnosis Akar Masalah:'
+                            : language === 'zh'
+                            ? '根因分析诊断：'
+                            : 'Root-Cause Diagnosis:'}
+                        </span>
                         <span className="text-stone-600">{explanation}</span>
                       </div>
                     </div>

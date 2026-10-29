@@ -223,7 +223,7 @@ export const Column2_KDS: React.FC<Column2KDSProps> = ({
                           : 'bg-emerald-100 text-emerald-700'
                       }`}
                     >
-                      {order.kds_status}
+                      {isPending ? t.kds_pending : isPreparing ? t.kds_preparing : t.kds_served}
                     </span>
                   </div>
                 </div>

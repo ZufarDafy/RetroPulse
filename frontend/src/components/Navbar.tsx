@@ -132,7 +132,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               onClick={onStartTour}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl text-xs font-bold text-amber-900 bg-amber-100 hover:bg-amber-200/80 border border-amber-300 transition-all shadow-xs active:scale-95"
-              title="Mulai Interactive Guided Tour"
+              title={language === 'id' ? 'Mulai Tur Interaktif' : language === 'zh' ? '开启互动引导漫游' : 'Start Interactive Tour'}
             >
               <Compass className="w-3.5 h-3.5 text-amber-600 animate-spin-slow" />
               <span className="hidden sm:inline">Tour</span>
@@ -198,7 +198,19 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               onClick={onSyncOffline}
               disabled={isSyncing || isOffline}
-              title={isOffline ? 'WiFi Offline: Hubungkan koneksi untuk sync' : 'Klik untuk sinkronisasi batch'}
+              title={
+                isOffline
+                  ? language === 'id'
+                    ? 'WiFi Offline: Hubungkan koneksi untuk sync'
+                    : language === 'zh'
+                    ? 'WiFi 离线：恢复网络后自动/手动同步'
+                    : 'WiFi Offline: Connect network to sync'
+                  : language === 'id'
+                  ? 'Klik untuk sinkronisasi batch'
+                  : language === 'zh'
+                  ? '点击执行批量同步'
+                  : 'Click to batch sync'
+              }
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all shadow-sm ${
                 isOffline
                   ? 'bg-amber-100 text-amber-800 border-amber-300 opacity-90 cursor-not-allowed'

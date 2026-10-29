@@ -168,7 +168,7 @@ export const Column1_POS: React.FC<Column1POSProps> = ({
       idempotency_key: idempotencyKey,
       order_number: orderNumber,
       table_number: tableNumber,
-      customer_name: `Pelanggan ${tableNumber}`,
+      customer_name: `${language === 'id' ? 'Pelanggan' : language === 'zh' ? '顾客' : 'Customer'} ${tableNumber}`,
       total_amount: grandTotal,
       payment_method: 'QRIS',
       payment_status: 'PAID',

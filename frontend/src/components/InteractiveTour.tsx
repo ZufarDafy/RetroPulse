@@ -346,7 +346,7 @@ export const InteractiveTour: React.FC<InteractiveTourProps> = ({
             <button
               onClick={handleSkip}
               className="w-7 h-7 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition-colors"
-              title="Keluar dari Tour"
+              title={language === 'id' ? 'Keluar dari Tour' : language === 'zh' ? '退出引导' : 'Exit Tour'}
             >
               <X className="w-3.5 h-3.5" />
             </button>

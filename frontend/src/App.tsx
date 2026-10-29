@@ -24,7 +24,18 @@ import { playSuccessChime, playWarningBeep } from './utils/sound';
 
 export const App: React.FC = () => {
   // Application State
-  const [language, setLanguage] = useState<Language>('id');
+  const [language, setLanguageState] = useState<Language>(() => {
+    const saved = localStorage.getItem('restopulse_lang');
+    if (saved === 'id' || saved === 'en' || saved === 'zh') {
+      return saved;
+    }
+    return 'en'; // Default language: English
+  });
+
+  const setLanguage = (lang: Language) => {
+    localStorage.setItem('restopulse_lang', lang);
+    setLanguageState(lang);
+  };
   const [tableNumber, setTableNumber] = useState<string>('T-01');
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);

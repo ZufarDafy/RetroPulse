@@ -8,7 +8,8 @@ import type {
   KDSStatus,
 } from '../types';
 
-const API_BASE = '/api/v1';
+const RAW_API_URL = (import.meta.env.VITE_API_URL as string | undefined) || '';
+const API_BASE = `${RAW_API_URL.replace(/\/+$/, '')}/api/v1`;
 
 // In-memory chaos state accessible to interceptor
 let clientChaosConfig: ChaosConfig = {

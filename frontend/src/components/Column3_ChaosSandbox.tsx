@@ -103,17 +103,41 @@ export const Column3_ChaosSandbox: React.FC<Column3ChaosSandboxProps> = ({
   const getRootCauseExplanation = (log: DiagnosticLog) => {
     switch (log.root_cause) {
       case 'RAPID_DOUBLE_TAP_PREVENTED':
-        return 'Analisis: Staf kasir panik menekan checkout berulang kali saat latensi tinggi. Mesin idempotensi lokal memblokir eksekusi ganda.';
+        return language === 'id'
+          ? 'Analisis: Staf kasir panik menekan checkout berulang kali saat latensi tinggi. Mesin idempotensi lokal memblokir eksekusi ganda.'
+          : language === 'zh'
+          ? '分析：收银员在高延迟下快速连击结账。本地幂等防抖引擎成功拦截重复提交。'
+          : 'Diagnosis: Cashier rapid-tapped checkout during high latency. Local idempotency engine blocked duplicate execution.';
       case 'IDEMPOTENCY_DUPLICATE_ABSORBED':
-        return 'Analisis: Request dengan Idempotency Key yang sama tiba di backend. Pesanan eksisting dikembalikan tanpa membuat tiket kembar.';
+        return language === 'id'
+          ? 'Analisis: Request dengan Idempotency Key yang sama tiba di backend. Pesanan eksisting dikembalikan tanpa membuat tiket kembar.'
+          : language === 'zh'
+          ? '分析：相同幂等键请求到达后端。服务器安全返回既有订单，未产生重单。'
+          : 'Diagnosis: Duplicate idempotency key reached backend. Existing order safely replayed without creating duplicate kitchen tickets.';
       case 'PRINTER_UNREACHABLE_QUEUED_REPRINT':
-        return 'Analisis: Printer thermal Bluetooth terputus/habis kertas. Pesanan tetap sukses di DB & dapur, struk dialihkan ke antrian cetak ulang.';
+        return language === 'id'
+          ? 'Analisis: Printer thermal Bluetooth terputus/habis kertas. Pesanan tetap sukses di DB & dapur, struk dialihkan ke antrian cetak ulang.'
+          : language === 'zh'
+          ? '分析：蓝牙小票机掉线或缺纸。订单在数据库与后厨照常成功，小票流转至待重打队列。'
+          : 'Diagnosis: Bluetooth thermal printer disconnected or paper out. Order succeeded in DB & KDS, receipt tagged for reprint.';
       case 'SIMULATED_DB_LOCK':
-        return 'Analisis: Deadlock database / SQLite contention diinjeksikan. Klien menerima pesan error manusiawi dan keranjang tetap aman.';
+        return language === 'id'
+          ? 'Analisis: Deadlock database / SQLite contention diinjeksikan. Klien menerima pesan error manusiawi dan keranjang tetap aman.'
+          : language === 'zh'
+          ? '分析：注入数据库死锁/锁争用。前端优雅提示错误，购物车餐品完好无损。'
+          : 'Diagnosis: Database deadlock injected. Client showed friendly error prompt while shopping cart remained safe.';
       case 'BATCH_SYNC_RESOLVED':
-        return 'Analisis: Koneksi internet pulih. Seluruh pesanan yang tertampung di LocalStorage berhasil direkonsiliasi ke server.';
+        return language === 'id'
+          ? 'Analisis: Koneksi internet pulih. Seluruh pesanan yang tertampung di LocalStorage berhasil direkonsiliasi ke server.'
+          : language === 'zh'
+          ? '分析：网络连接恢复。本地存储中积压的离线排队订单已成功批量对账至服务端。'
+          : 'Diagnosis: Internet connection restored. All locally queued offline orders successfully reconciled with the server.';
       case 'CHAOS_WIFI_OFFLINE':
-        return 'Analisis: WiFi restoran drop disimulasikan. Mode penyimpanan luring (Offline Queue) diaktifkan otomatis.';
+        return language === 'id'
+          ? 'Analisis: WiFi restoran drop disimulasikan. Mode penyimpanan luring (Offline Queue) diaktifkan otomatis.'
+          : language === 'zh'
+          ? '分析：模拟餐厅 WiFi 断网。前端离线排队模式（LocalStorage Queue）已自动激活。'
+          : 'Diagnosis: Restaurant WiFi drop simulated. Offline Queue mode automatically activated in browser storage.';
       default:
         return null;
     }
@@ -174,7 +198,9 @@ export const Column3_ChaosSandbox: React.FC<Column3ChaosSandboxProps> = ({
             <Activity className="w-3.5 h-3.5 text-orange-500" />
             <span>{t.chaos_title}</span>
           </h3>
-          <span className="text-[11px] text-stone-400 font-medium">Klik untuk simulasi gangguan</span>
+          <span className="text-[11px] text-stone-400 font-medium">
+            {language === 'id' ? 'Klik untuk simulasi gangguan' : language === 'zh' ? '点击开关以注入现场故障' : 'Click to inject fault'}
+          </span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
@@ -193,7 +219,9 @@ export const Column3_ChaosSandbox: React.FC<Column3ChaosSandboxProps> = ({
               </div>
               <div>
                 <span className="font-bold block leading-tight">1. WiFi Drop (Offline)</span>
-                <span className="text-[10px] text-stone-500">Putus koneksi kasir</span>
+                <span className="text-[10px] text-stone-500">
+                  {language === 'id' ? 'Putus koneksi kasir' : language === 'zh' ? '中断收银网络' : 'Cut POS network'}
+                </span>
               </div>
             </div>
             <div className={`w-10 h-6 rounded-full transition-colors relative flex items-center px-0.5 ${chaosConfig.wifi_offline ? 'bg-rose-500' : 'bg-stone-300'}`}>
@@ -216,7 +244,9 @@ export const Column3_ChaosSandbox: React.FC<Column3ChaosSandboxProps> = ({
               </div>
               <div>
                 <span className="font-bold block leading-tight">2. Peak Latency 2500ms</span>
-                <span className="text-[10px] text-stone-500">Uji ketahanan double-tap</span>
+                <span className="text-[10px] text-stone-500">
+                  {language === 'id' ? 'Uji ketahanan double-tap' : language === 'zh' ? '测试连击防抖' : 'Test double-tap guard'}
+                </span>
               </div>
             </div>
             <div className={`w-10 h-6 rounded-full transition-colors relative flex items-center px-0.5 ${chaosConfig.bad_network_latency_ms > 0 ? 'bg-amber-500' : 'bg-stone-300'}`}>
@@ -239,7 +269,9 @@ export const Column3_ChaosSandbox: React.FC<Column3ChaosSandboxProps> = ({
               </div>
               <div>
                 <span className="font-bold block leading-tight">3. Printer Disconnect</span>
-                <span className="text-[10px] text-stone-500">Uji struk antri reprint</span>
+                <span className="text-[10px] text-stone-500">
+                  {language === 'id' ? 'Uji struk antri reprint' : language === 'zh' ? '测试小票排队重打' : 'Test reprint queue'}
+                </span>
               </div>
             </div>
             <div className={`w-10 h-6 rounded-full transition-colors relative flex items-center px-0.5 ${chaosConfig.printer_status !== 'CONNECTED' ? 'bg-orange-500' : 'bg-stone-300'}`}>
@@ -262,7 +294,9 @@ export const Column3_ChaosSandbox: React.FC<Column3ChaosSandboxProps> = ({
               </div>
               <div>
                 <span className="font-bold block leading-tight">4. Backend 500 DB Lock</span>
-                <span className="text-[10px] text-stone-500">Simulasi deadlock server</span>
+                <span className="text-[10px] text-stone-500">
+                  {language === 'id' ? 'Simulasi deadlock server' : language === 'zh' ? '模拟数据库死锁' : 'Simulate server deadlock'}
+                </span>
               </div>
             </div>
             <div className={`w-10 h-6 rounded-full transition-colors relative flex items-center px-0.5 ${chaosConfig.db_lock_simulated ? 'bg-rose-600' : 'bg-stone-300'}`}>
@@ -299,7 +333,7 @@ export const Column3_ChaosSandbox: React.FC<Column3ChaosSandboxProps> = ({
               <Search className="w-3.5 h-3.5 text-stone-400 absolute left-2.5 top-2" />
               <input
                 type="text"
-                placeholder="Cari log..."
+                placeholder={language === 'id' ? 'Cari log...' : language === 'zh' ? '搜索日志...' : 'Search logs...'}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="bg-stone-50 border border-stone-200 rounded-xl pl-7 pr-2.5 py-1 text-xs text-stone-800 focus:outline-none focus:border-orange-400 w-32 placeholder:text-stone-400"
@@ -307,7 +341,7 @@ export const Column3_ChaosSandbox: React.FC<Column3ChaosSandboxProps> = ({
             </div>
             <button
               onClick={handleExportJSON}
-              title="Ekspor log ke JSON"
+              title={language === 'id' ? 'Ekspor log ke JSON' : language === 'zh' ? '导出 JSON 日志' : 'Export logs to JSON'}
               className="p-1.5 rounded-xl bg-white hover:bg-orange-50 text-stone-600 hover:text-orange-600 border border-stone-200 transition-colors shadow-2xs"
             >
               <Download className="w-3.5 h-3.5" />

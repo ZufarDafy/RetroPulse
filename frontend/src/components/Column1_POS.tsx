@@ -73,6 +73,11 @@ export const Column1_POS: React.FC<Column1POSProps> = ({
   // Extract distinct categories
   const categories = ['ALL', ...Array.from(new Set(menuItems.map((m) => m.category[language])))];
 
+  // Reset active category on language switch
+  useEffect(() => {
+    setActiveCategory('ALL');
+  }, [language]);
+
   const filteredMenu =
     activeCategory === 'ALL'
       ? menuItems
@@ -255,7 +260,7 @@ export const Column1_POS: React.FC<Column1POSProps> = ({
                 : 'bg-white text-stone-600 hover:bg-orange-50 hover:text-orange-700 border border-stone-200/80'
             }`}
           >
-            {cat === 'ALL' ? 'Semua Menu' : cat}
+            {cat === 'ALL' ? t.category_all : cat}
           </button>
         ))}
       </div>
@@ -346,7 +351,7 @@ export const Column1_POS: React.FC<Column1POSProps> = ({
               </div>
               <div>
                 <p className="font-bold text-stone-900">
-                  Pesanan {lastPlacedOrder.order_number} {lastPlacedOrder.sync_status === 'QUEUED_OFFLINE' ? '(Antri Offline)' : '(Terkirim)'}
+                  {t.order_label} {lastPlacedOrder.order_number} {lastPlacedOrder.sync_status === 'QUEUED_OFFLINE' ? `(${t.order_offline})` : `(${t.order_sent})`}
                 </p>
                 <p className="text-[11px] text-stone-500">
                   Total: Rp {lastPlacedOrder.total_amount.toLocaleString('id-ID')} · {lastPlacedOrder.table_number}
@@ -379,7 +384,7 @@ export const Column1_POS: React.FC<Column1POSProps> = ({
                 className="text-rose-500 hover:text-rose-600 flex items-center gap-0.5 text-[11px] font-semibold"
               >
                 <Trash2 className="w-3 h-3" />
-                <span>Kosongkan</span>
+                <span>{t.clear_cart}</span>
               </button>
             </div>
 

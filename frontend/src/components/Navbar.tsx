@@ -161,14 +161,14 @@ export const Navbar: React.FC<NavbarProps> = ({
               onChange={(e) => setTableNumber(e.target.value)}
               className="bg-white text-orange-700 font-bold rounded-lg px-2 py-0.5 border border-orange-200 focus:outline-none focus:ring-2 focus:ring-orange-400 text-xs shadow-2xs"
             >
-              <option value="T-01">Meja T-01</option>
-              <option value="T-02">Meja T-02</option>
-              <option value="T-03">Meja T-03</option>
-              <option value="T-04">Meja T-04</option>
-              <option value="T-05">Meja T-05</option>
-              <option value="T-06">Meja T-06</option>
-              <option value="VIP-01">VIP 01 (Private Room)</option>
-              <option value="TA-01">Takeaway #01</option>
+              <option value="T-01">{language === 'id' ? 'Meja T-01' : language === 'zh' ? '餐桌 T-01' : 'Table T-01'}</option>
+              <option value="T-02">{language === 'id' ? 'Meja T-02' : language === 'zh' ? '餐桌 T-02' : 'Table T-02'}</option>
+              <option value="T-03">{language === 'id' ? 'Meja T-03' : language === 'zh' ? '餐桌 T-03' : 'Table T-03'}</option>
+              <option value="T-04">{language === 'id' ? 'Meja T-04' : language === 'zh' ? '餐桌 T-04' : 'Table T-04'}</option>
+              <option value="T-05">{language === 'id' ? 'Meja T-05' : language === 'zh' ? '餐桌 T-05' : 'Table T-05'}</option>
+              <option value="T-06">{language === 'id' ? 'Meja T-06' : language === 'zh' ? '餐桌 T-06' : 'Table T-06'}</option>
+              <option value="VIP-01">{language === 'id' ? 'VIP 01 (Ruang Privat)' : language === 'zh' ? 'VIP 01 (包厢)' : 'VIP 01 (Private Room)'}</option>
+              <option value="TA-01">{language === 'id' ? 'Takeaway #01 (Bungkus)' : language === 'zh' ? '外卖打包 #01' : 'Takeaway #01'}</option>
             </select>
           </div>
 

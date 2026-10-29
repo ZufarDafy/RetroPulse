@@ -56,12 +56,12 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
             <span className="font-bold text-stone-800">{order.table_number}</span>
           </div>
           <div className="flex justify-between">
-            <span>Waktu:</span>
-            <span>{new Date(order.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+            <span>{language === 'id' ? 'Waktu:' : language === 'zh' ? '时间:' : 'Time:'}</span>
+            <span>{new Date(order.created_at).toLocaleTimeString(language === 'id' ? 'id-ID' : language === 'zh' ? 'zh-CN' : 'en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
           </div>
           <div className="flex justify-between">
             <span>{t.payment_method}:</span>
-            <span className="font-bold text-emerald-700">{order.payment_method} (LUNAS)</span>
+            <span className="font-bold text-emerald-700">{order.payment_method} ({language === 'id' ? 'LUNAS' : language === 'zh' ? '已支付' : 'PAID'})</span>
           </div>
           <div className="flex justify-between text-[10px] text-stone-400 truncate">
             <span>Key:</span>

@@ -84,10 +84,10 @@ export const Column2_KDS: React.FC<Column2KDSProps> = ({
         {/* Live Queue Counter */}
         <div className="flex items-center gap-1.5 text-xs font-mono">
           <span className="px-2.5 py-1 rounded-xl bg-rose-50 text-rose-700 border border-rose-200 font-bold shadow-2xs">
-            {pendingCount} Menunggu
+            {pendingCount} {t.kds_pending}
           </span>
           <span className="px-2.5 py-1 rounded-xl bg-amber-50 text-amber-700 border border-amber-200 font-bold shadow-2xs">
-            {preparingCount} Dimasak
+            {preparingCount} {t.kds_preparing}
           </span>
         </div>
       </div>
@@ -136,7 +136,7 @@ export const Column2_KDS: React.FC<Column2KDSProps> = ({
               : 'text-stone-600 hover:text-stone-900 hover:bg-white'
           }`}
         >
-          Semua ({orders.length})
+          {t.kds_filter_all} ({orders.length})
         </button>
         <button
           onClick={() => setFilter('PENDING')}
@@ -175,7 +175,7 @@ export const Column2_KDS: React.FC<Column2KDSProps> = ({
         {filteredOrders.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-stone-400 text-xs space-y-2 py-12">
             <ChefHat className="w-12 h-12 stroke-1 text-stone-300" />
-            <p className="font-medium">Tidak ada tiket dapur dalam kategori ini.</p>
+            <p className="font-medium">{t.kds_empty_tickets}</p>
           </div>
         ) : (
           filteredOrders.map((order) => {
@@ -235,7 +235,7 @@ export const Column2_KDS: React.FC<Column2KDSProps> = ({
                       <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
                       <span>{t.unsynced_badge}</span>
                     </span>
-                    <span className="text-[10px] text-amber-700">Auto-sync saat WiFi pulih</span>
+                    <span className="text-[10px] text-amber-700">{t.kds_auto_sync_hint}</span>
                   </div>
                 )}
 
@@ -246,7 +246,7 @@ export const Column2_KDS: React.FC<Column2KDSProps> = ({
                       <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 animate-bounce" />
                       <div>
                         <span className="font-bold block text-[11px]">{t.receipt_queued_badge}</span>
-                        <span className="text-[10px] text-amber-700">Printer mati saat pesanan dibuat</span>
+                        <span className="text-[10px] text-amber-700">{t.kds_printer_offline_hint}</span>
                       </div>
                     </div>
                     <button
@@ -340,7 +340,7 @@ export const Column2_KDS: React.FC<Column2KDSProps> = ({
                     {isServed && (
                       <span className="inline-flex items-center gap-1 text-emerald-700 font-bold text-xs bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
                         <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                        <span>Disajikan</span>
+                        <span>{t.kds_served}</span>
                       </span>
                     )}
                   </div>

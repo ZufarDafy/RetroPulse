@@ -1,0 +1,36 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: restopulse-backend
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - DATABASE_PATH=/app/data/restopulse.db
+    volumes:
+      - restopulse-data:/app/data
+    restart: unless-stopped
+    networks:
+      - restopulse-net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: restopulse-frontend
+    ports:
+      - "5188:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - restopulse-net
+
+volumes:
+  restopulse-data:
+
+networks:
+  restopulse-net:
+    driver: bridge

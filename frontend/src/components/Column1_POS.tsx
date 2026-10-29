@@ -261,7 +261,7 @@ export const Column1_POS: React.FC<Column1POSProps> = ({
       </div>
 
       {/* Main Content Area: Menu Grid (Top) */}
-      <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4 overscroll-contain">
+      <div data-tour="pos-menu-grid" className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4 overscroll-contain">
         {/* Menu Items Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {filteredMenu.map((item) => {
@@ -365,7 +365,7 @@ export const Column1_POS: React.FC<Column1POSProps> = ({
       </div>
 
       {/* Cart Summary & Checkout Footer */}
-      <div className="flex-shrink-0 border-t border-orange-100 bg-[#fffdfa] p-4 space-y-3">
+      <div data-tour="pos-checkout-section" className="flex-shrink-0 border-t border-orange-100 bg-[#fffdfa] p-4 space-y-3">
         {/* Cart items list */}
         {cart.length > 0 ? (
           <div className="space-y-2 max-h-36 overflow-y-auto pr-1">

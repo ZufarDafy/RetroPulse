@@ -18,6 +18,7 @@ import {
   Terminal,
   ArrowRight,
   Info,
+  Compass,
 } from 'lucide-react';
 
 interface WelcomeGuideModalProps {
@@ -25,6 +26,7 @@ interface WelcomeGuideModalProps {
   onClose: () => void;
   language: Language;
   onNavigateScenario: (mode: ViewMode) => void;
+  onStartTour?: () => void;
 }
 
 export const WelcomeGuideModal: React.FC<WelcomeGuideModalProps> = ({
@@ -32,6 +34,7 @@ export const WelcomeGuideModal: React.FC<WelcomeGuideModalProps> = ({
   onClose,
   language,
   onNavigateScenario,
+  onStartTour,
 }) => {
   const t = UI_TRANSLATIONS[language];
   const [activeTab, setActiveTab] = useState<'about' | 'steps'>('about');
@@ -423,23 +426,38 @@ export const WelcomeGuideModal: React.FC<WelcomeGuideModalProps> = ({
                     </h5>
                     <p className="text-[11px] text-stone-400">
                       {language === 'id'
-                        ? 'Ikuti panduan 5 langkah cepat (Baby Steps) untuk menguji setiap skenario.'
+                        ? 'Ikuti panduan interaktif dengan sorotan lampu sorot (spotlight) pada tombol.'
                         : language === 'zh'
-                        ? '跟随 5 步简易指南，逐一体验现场混沌测试与容灾机制。'
-                        : 'Follow our 5 quick baby steps to test each scenario in real time.'}
+                        ? '跟随聚光灯高亮指引，亲身体验每一个按钮与功能。'
+                        : 'Follow the interactive spotlight tour directly on the actual buttons.'}
                     </p>
                   </div>
                 </div>
-                <button
-                  onClick={() => {
-                    playTapSound();
-                    setActiveTab('steps');
-                  }}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs transition-all shadow-sm active:scale-95"
-                >
-                  <span>{language === 'id' ? 'Buka Baby Steps' : language === 'zh' ? '查看新手 5 步' : 'Open Baby Steps'}</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
+                <div className="flex items-center gap-2">
+                  {onStartTour && (
+                    <button
+                      onClick={() => {
+                        playSuccessChime();
+                        onClose();
+                        onStartTour();
+                      }}
+                      className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold text-xs transition-all shadow-sm active:scale-95"
+                    >
+                      <Compass className="w-3.5 h-3.5 text-white animate-spin-slow" />
+                      <span>{language === 'id' ? 'Mulai Tour Sorotan 🎯' : language === 'zh' ? '开启聚光灯导览 🎯' : 'Start Spotlight Tour 🎯'}</span>
+                    </button>
+                  )}
+                  <button
+                    onClick={() => {
+                      playTapSound();
+                      setActiveTab('steps');
+                    }}
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs transition-all"
+                  >
+                    <span>{language === 'id' ? 'Baca 5 Langkah' : language === 'zh' ? '查看 5 步说明' : 'Read 5 Steps'}</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -600,11 +618,31 @@ export const WelcomeGuideModal: React.FC<WelcomeGuideModalProps> = ({
             <span>{t.dont_show_again}</span>
           </label>
 
-          {/* Action Close / Start Exploring */}
+          {/* Action Close / Start Exploring / Start Tour */}
           <div className="flex items-center gap-2">
+            {onStartTour && (
+              <button
+                onClick={() => {
+                  playSuccessChime();
+                  onClose();
+                  onStartTour();
+                }}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-orange-500 via-orange-600 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white font-extrabold text-xs shadow-md shadow-orange-500/25 active:scale-95 transition-all"
+              >
+                <Compass className="w-4 h-4 text-white animate-spin-slow" />
+                <span>
+                  {language === 'id'
+                    ? 'Mulai Tour Sorotan Tombol 🎯'
+                    : language === 'zh'
+                    ? '开启按钮聚光灯导览 🎯'
+                    : 'Start Button Spotlight Tour 🎯'}
+                </span>
+              </button>
+            )}
+
             <button
               onClick={handleClose}
-              className="px-5 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs shadow-sm shadow-orange-500/20 active:scale-95 transition-all"
+              className="px-4 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs active:scale-95 transition-all"
             >
               {t.btn_start_exploring}
             </button>

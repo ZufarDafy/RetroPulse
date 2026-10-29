@@ -13,6 +13,7 @@ import { Column2_KDS } from './components/Column2_KDS';
 import { Column3_ChaosSandbox } from './components/Column3_ChaosSandbox';
 import { ReceiptModal } from './components/ReceiptModal';
 import { WelcomeGuideModal } from './components/WelcomeGuideModal';
+import { InteractiveTour } from './components/InteractiveTour';
 import { api, setClientChaosConfig } from './services/api';
 import {
   getOfflineQueue,
@@ -53,6 +54,7 @@ export const App: React.FC = () => {
   const [isGuideOpen, setIsGuideOpen] = useState<boolean>(() => {
     return localStorage.getItem('restopulse_onboarding_dismissed') !== 'true';
   });
+  const [isTourOpen, setIsTourOpen] = useState<boolean>(false);
 
   // 2 Dedicated View Modes: 'client' (POS & KDS) vs 'sandbox' (Chaos & Logs) + 'split' (3 columns)
   const [viewMode, setViewMode] = useState<ViewMode>('client');
@@ -399,6 +401,7 @@ export const App: React.FC = () => {
           setViewMode={setViewMode}
           hasActiveChaos={hasActiveChaos}
           onOpenGuide={() => setIsGuideOpen(true)}
+          onStartTour={() => setIsTourOpen(true)}
         />
       </div>
 
@@ -508,6 +511,16 @@ export const App: React.FC = () => {
         onClose={() => setIsGuideOpen(false)}
         language={language}
         onNavigateScenario={(mode) => setViewMode(mode)}
+        onStartTour={() => setIsTourOpen(true)}
+      />
+
+      {/* Interactive Spotlight Guided Tour (Button & Element Highlighting) */}
+      <InteractiveTour
+        isOpen={isTourOpen}
+        onClose={() => setIsTourOpen(false)}
+        language={language}
+        currentViewMode={viewMode}
+        onSetViewMode={(mode) => setViewMode(mode)}
       />
     </div>
   );

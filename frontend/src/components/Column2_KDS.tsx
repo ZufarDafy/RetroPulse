@@ -66,7 +66,7 @@ export const Column2_KDS: React.FC<Column2KDSProps> = ({
   const servedCount = orders.filter((o) => o.kds_status === 'SERVED').length;
 
   return (
-    <div className="flex flex-col h-full min-h-0 bg-white rounded-3xl border border-orange-100 shadow-md shadow-orange-950/5 overflow-hidden transition-all">
+    <div data-tour="kds-column" className="flex flex-col h-full min-h-0 bg-white rounded-3xl border border-orange-100 shadow-md shadow-orange-950/5 overflow-hidden transition-all">
       {/* Column Header */}
       <div className="flex-shrink-0 p-4 border-b border-orange-100 bg-gradient-to-r from-orange-50/80 to-white flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -93,7 +93,7 @@ export const Column2_KDS: React.FC<Column2KDSProps> = ({
       </div>
 
       {/* Mock Hardware Status Bar */}
-      <div className="flex-shrink-0 px-4 py-2.5 bg-[#fffcf9] border-b border-orange-100/70 flex flex-wrap items-center justify-between gap-2 text-xs">
+      <div data-tour="kds-hardware-bar" className="flex-shrink-0 px-4 py-2.5 bg-[#fffcf9] border-b border-orange-100/70 flex flex-wrap items-center justify-between gap-2 text-xs">
         {/* Bluetooth Thermal Printer */}
         <div className="flex items-center gap-2">
           <span className="text-stone-500 font-medium">{t.hardware_printer}:</span>

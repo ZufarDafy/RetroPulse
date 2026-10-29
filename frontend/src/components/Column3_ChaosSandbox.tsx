@@ -120,7 +120,7 @@ export const Column3_ChaosSandbox: React.FC<Column3ChaosSandboxProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-full min-h-0 bg-white rounded-3xl border border-orange-100 shadow-md shadow-orange-950/5 overflow-hidden transition-all">
+    <div data-tour="chaos-sandbox-container" className="flex flex-col h-full min-h-0 bg-white rounded-3xl border border-orange-100 shadow-md shadow-orange-950/5 overflow-hidden transition-all">
       {/* Column Header */}
       <div className="flex-shrink-0 p-4 border-b border-orange-100 bg-gradient-to-r from-orange-50/80 to-white flex items-center justify-between">
         <div className="flex items-center gap-3">

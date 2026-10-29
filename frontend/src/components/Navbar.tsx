@@ -12,6 +12,7 @@ import {
   Columns,
   AlertTriangle,
   BookOpen,
+  Compass,
 } from 'lucide-react';
 
 export type ViewMode = 'client' | 'sandbox' | 'split';
@@ -29,6 +30,7 @@ interface NavbarProps {
   setViewMode: (mode: ViewMode) => void;
   hasActiveChaos: boolean;
   onOpenGuide: () => void;
+  onStartTour?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -44,6 +46,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   setViewMode,
   hasActiveChaos,
   onOpenGuide,
+  onStartTour,
 }) => {
   const t = UI_TRANSLATIONS[language];
 
@@ -70,9 +73,9 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
         </div>
 
-        {/* View Switcher: 2 Main Views (Client vs Sandbox) + Optional Split + Guide */}
+        {/* View Switcher: 2 Main Views (Client vs Sandbox) + Optional Split + Guide + Tour */}
         <div className="flex items-center gap-2">
-          <div className="flex items-center bg-stone-100/80 p-1 rounded-2xl border border-stone-200/80 shadow-inner">
+          <div data-tour="navbar-views" className="flex items-center bg-stone-100/80 p-1 rounded-2xl border border-stone-200/80 shadow-inner">
             <button
               onClick={() => setViewMode('client')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
@@ -123,10 +126,22 @@ export const Navbar: React.FC<NavbarProps> = ({
             <BookOpen className="w-3.5 h-3.5 text-orange-600" />
             <span className="hidden sm:inline">{t.nav_guide}</span>
           </button>
+
+          {/* Interactive Spotlight Tour Button */}
+          {onStartTour && (
+            <button
+              onClick={onStartTour}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl text-xs font-bold text-amber-900 bg-amber-100 hover:bg-amber-200/80 border border-amber-300 transition-all shadow-xs active:scale-95"
+              title="Mulai Interactive Guided Tour"
+            >
+              <Compass className="w-3.5 h-3.5 text-amber-600 animate-spin-slow" />
+              <span className="hidden sm:inline">Tour</span>
+            </button>
+          )}
         </div>
 
         {/* Right Controls: Table Selector, Status Badges, Language */}
-        <div className="flex items-center flex-wrap gap-2.5">
+        <div data-tour="navbar-table-lang" className="flex items-center flex-wrap gap-2.5">
           {/* Active Chaos Warning Pill in Client View */}
           {hasActiveChaos && viewMode === 'client' && (
             <button

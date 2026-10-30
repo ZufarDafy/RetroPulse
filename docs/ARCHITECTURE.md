@@ -1,15 +1,15 @@
 # RestoPulse: Offline-Resilient Restaurant POS, KDS & Field Diagnostic Sandbox
-## Arsitektur Teknis Sistem & Desain Mesin
+## Technical Architecture & System Design
 
-**Dokumen Pendamping:** [ABOUT-APPS.md](ABOUT-APPS.md) — spesifikasi aplikasi dan aturan bisnis · [FITUR-APLIKASI.md](FITUR-APLIKASI.md) — matriks rincian fitur
+**Companion Documents:** [ABOUT-APPS.md](ABOUT-APPS.md) — Application specifications and business rules · [FITUR-APLIKASI.md](FITUR-APLIKASI.md) — Feature matrix and verification criteria
 
-Dokumen ini mendefinisikan **bagaimana** sistem dibangun secara teknis: struktur modul, skema basis data, mesin idempotensi, antrian sinkronisasi luring, injeksi kekacauan (*chaos injection*), serta kontrak antarmuka API RESTful.
+This document defines **how** the system is engineered: module topology, relational database schema, idempotency state machine, offline synchronization engine, chaos injection architecture, dual-database design, and RESTful API contracts.
 
 ---
 
-## 1. Topologi Sistem & Tumpukan Teknologi
+## 1. System Topology & Architecture
 
-Sistem dirancang sebagai aplikasi web *fullstack* terpadu dengan arsitektur modular yang ringan, cepat, dan siap dijalankan secara portabel tanpa instalasi rumit:
+The system is designed as a unified fullstack web application featuring lightweight, high-performance modular services capable of running in Docker containers or serverless edge environments:
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
@@ -17,7 +17,7 @@ Sistem dirancang sebagai aplikasi web *fullstack* terpadu dengan arsitektur modu
 │  React 18 + TypeScript + Vite + Tailwind CSS + Lucide Icons           │
 │                                                                        │
 │  ┌──────────────────────┬──────────────────────┬────────────────────┐  │
-│  │     KOLOM 1: POS     │     KOLOM 2: KDS     │   KOLOM 3: CHAOS   │  │
+│  │   COLUMN 1: POS      │   COLUMN 2: KDS      │  COLUMN 3: CHAOS   │  │
 │  │  - Optimistic UI     │  - Real-time Board   │  - Chaos Engine    │  │
 │  │  - Idempotency Gen   │  - Printer Manager   │  - Log Streamer    │  │
 │  │  - Local Queue (IDB) │  - Hardware Badges   │  - Root-Cause Diag │  │
@@ -25,16 +25,16 @@ Sistem dirancang sebagai aplikasi web *fullstack* terpadu dengan arsitektur modu
 │             │                      │                      │            │
 │             ▼                      ▼                      │            │
 │      ┌──────────────────────────────────────────────┐     │            │
-│      │     CLIENT-SIDE CHAOS INTERCEPTOR AXIOS      │─────┘            │
+│      │     CLIENT-SIDE CHAOS INTERCEPTOR            │─────┘            │
 │      │  • Offline Drop Interception                 │                  │
 │      │  • Latency Delay (2500ms sleep)              │                  │
-│      │  • Double-Click Blocker & UX Event Emitter   │                  │
+│      │  • Double-Tap Blocker & UX Event Emitter     │                  │
 │      └──────────────────────┬───────────────────────┘                  │
 └─────────────────────────────┼──────────────────────────────────────────┘
                               │ HTTP / REST / JSON
                               ▼
 ┌────────────────────────────────────────────────────────────────────────┐
-│                        BACKEND ENGINE (GO + GIN)                       │
+│                 BACKEND ENGINE (GO + GIN WEB FRAMEWORK)                │
 │                                                                        │
 │  ┌──────────────────────────────────────────────────────────────────┐  │
 │  │ GIN MIDDLEWARE STACK                                             │  │
@@ -51,9 +51,9 @@ Sistem dirancang sebagai aplikasi web *fullstack* terpadu dengan arsitektur modu
 │  └──────────────────────────────────┬───────────────────────────────┘  │
 │                                     │                                  │
 │  ┌──────────────────────────────────▼───────────────────────────────┐  │
-│  │ GORM DATA ACCESS LAYER (ORM)                                     │  │
-│  │  • Transactions & Mutex Lock Handlers                            │  │
-│  │  • SQLite3 (Default Zero-Config) / PostgreSQL Fallback           │  │
+│  │ GORM DATA ACCESS LAYER (DUAL-DATABASE ENGINE)                    │  │
+│  │  • Auto-detects POSTGRES_URL / DATABASE_URL                      │  │
+│  │  • Falls back to zero-config pure-Go SQLite3                     │  │
 │  └──────────────────────────────────┬───────────────────────────────┘  │
 └─────────────────────────────────────┼──────────────────────────────────┘
                                       │
@@ -61,92 +61,85 @@ Sistem dirancang sebagai aplikasi web *fullstack* terpadu dengan arsitektur modu
                       ┌───────────────────────────────┐
                       │    STORAGE / PERSISTENCE      │
                       │  • restopulse.db (SQLite3)    │
-                      │  • PostgreSQL 16 (Opsional)   │
+                      │  • Vercel Postgres / Neon DB  │
                       └───────────────────────────────┘
 ```
 
-### 1.1 Pemilihan Tumpukan Teknologi (Tech Stack Rationale)
+### 1.1 Technology Stack Rationale
 
-| Komponen | Teknologi | Alasan Pemilihan |
+| Component | Technology | Rationale |
 |---|---|---|
-| **Backend Framework** | **Go 1.21+ (Gin Web Framework)** | Kinerja sangat tinggi (*sub-millisecond latency*), *memory footprint* minimal (<25MB RAM), *concurrency* bawaan (*goroutines*), dan kompilasi biner tunggal (*single binary output*). |
-| **ORM & Persistence** | **GORM + SQLite3 (atau PostgreSQL)** | *Zero-config portable deployment*. Pengguna dapat langsung menjalankan backend tanpa instalasi database server terpisah. Didukung struktur relasional tabel lengkap dengan indeks unik. |
-| **Frontend Framework**| **React 18 + TypeScript + Vite** | Reaktivitas cepat, *type-safety*, ekosistem komponen luas, dan waktu kompilasi kilat (*Instant HMR*). |
-| **Styling & Ikon** | **Tailwind CSS + Lucide React** | Desain modern, adaptif, responsif, dan estetika premium kelas F&B komersial (Square/Toast/Lightspeed vibes). |
-| **Penyimpanan Klien** | **LocalStorage / IndexedDB (Zustand persist)** | Penyimpanan antrian luring (*offline sync queue*) yang bertahan dari *refresh* atau penutupan peramban. |
-| **Kontainerisasi** | **Docker & Docker Compose** | *Multi-stage build* untuk menghasilkan image Docker yang ramping dan portabel. |
+| **Backend Framework** | **Go 1.22+ (Gin Web Framework)** | Exceptional performance (*sub-millisecond latency*), ultra-low memory footprint (<25MB RAM), native goroutine concurrency, and single-binary portability. |
+| **ORM & Dual Database** | **GORM (SQLite + PostgreSQL)** | Supports zero-config portable execution via pure-Go SQLite for local dev/Docker, and automatically switches to PostgreSQL when `POSTGRES_URL` or `DATABASE_URL` is detected (e.g. Vercel Postgres, Neon, Supabase). |
+| **Frontend Framework**| **React 18 + TypeScript + Vite** | Rapid reactivity, complete type safety, rich component ecosystem, and instant Hot Module Replacement (HMR). |
+| **Styling & Icons** | **Tailwind CSS + Lucide React** | Warm, friendly commercial F&B aesthetic (inspired by Square, Toast, and Lightspeed) with responsive layout locking. |
+| **Client Storage** | **Browser LocalStorage** | Durable store-and-forward queue for offline orders that survives page refreshes and browser restarts. |
+| **Deployment Engine** | **Vercel / Docker Compose** | Turnkey container orchestration locally, plus zero-cost Serverless Go Backend + Frontend + Vercel Postgres in the cloud. |
 
 ---
 
-## 2. Skema Basis Data Relasional
+## 2. Relational Database Schema
 
-Struktur basis data mencakup 5 entitas inti: `orders`, `order_items`, `idempotency_records`, `diagnostic_logs`, dan `chaos_configs`.
+The persistence layer comprises 4 core entities: `orders`, `order_items`, `diagnostic_logs`, and `chaos_configs`.
 
-### 2.1 Definisi Tabel SQL (DDL)
+### 2.1 Table Definitions (DDL)
 
 ```sql
--- 1. Tabel Pesanan (Orders)
+-- 1. Orders Table
 CREATE TABLE IF NOT EXISTS orders (
-    id VARCHAR(36) PRIMARY KEY,                   -- UUID v4
-    idempotency_key VARCHAR(64) UNIQUE NOT NULL,   -- Mencegah pesanan ganda
-    order_number VARCHAR(16) NOT NULL,            -- Misal: #RP-1001
-    table_number VARCHAR(8) NOT NULL,             -- Misal: "T-04", "TA-01"
-    customer_name VARCHAR(64) NOT NULL,           -- Nama pemesan / kasir
-    total_amount NUMERIC(12, 2) NOT NULL,         -- Total harga transaksi (IDR)
+    id VARCHAR(36) PRIMARY KEY,                   -- RFC4122 UUID v4
+    idempotency_key VARCHAR(64) UNIQUE NOT NULL,   -- Prevents duplicate transactions
+    order_number VARCHAR(16) NOT NULL,            -- e.g., #RP-1001
+    table_number VARCHAR(16) NOT NULL,            -- e.g., "T-01", "VIP-01", "TA-01"
+    customer_name VARCHAR(64) NOT NULL,           -- Customer / table alias
+    total_amount NUMERIC(12, 2) NOT NULL,         -- Grand total in IDR
     payment_method VARCHAR(16) NOT NULL,          -- "QRIS", "CASH", "CARD"
     payment_status VARCHAR(16) NOT NULL,          -- "PAID", "PENDING"
     kds_status VARCHAR(16) NOT NULL,              -- "PENDING", "PREPARING", "SERVED", "CANCELLED"
-    print_status VARCHAR(16) NOT NULL,            -- "PRINTED", "QUEUED_FOR_REPRINT", "FAILED"
-    sync_status VARCHAR(16) NOT NULL,             -- "SYNCED", "QUEUED_OFFLINE"
+    print_status VARCHAR(32) NOT NULL,            -- "PRINTED", "QUEUED_FOR_REPRINT", "FAILED"
+    sync_status VARCHAR(32) NOT NULL,             -- "SYNCED", "QUEUED_OFFLINE"
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
-CREATE INDEX idx_orders_kds_status ON orders(kds_status);
-CREATE INDEX idx_orders_idempotency_key ON orders(idempotency_key);
 
--- 2. Tabel Rincian Item Pesanan (Order Items)
+CREATE INDEX IF NOT EXISTS idx_orders_kds_status ON orders(kds_status);
+CREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders(created_at);
+
+-- 2. Order Items Table
 CREATE TABLE IF NOT EXISTS order_items (
-    id VARCHAR(36) PRIMARY KEY,                   -- UUID v4
+    id VARCHAR(36) PRIMARY KEY,                   -- Item UUID
     order_id VARCHAR(36) NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
-    menu_item_id VARCHAR(32) NOT NULL,
-    name VARCHAR(128) NOT NULL,
-    price NUMERIC(12, 2) NOT NULL,
-    quantity INTEGER NOT NULL,
-    notes TEXT,
-    subtotal NUMERIC(12, 2) NOT NULL
-);
-CREATE INDEX idx_order_items_order_id ON order_items(order_id);
-
--- 3. Tabel Riwayat Kunci Idempotensi (Idempotency Audit)
-CREATE TABLE IF NOT EXISTS idempotency_records (
-    key VARCHAR(64) PRIMARY KEY,
-    order_id VARCHAR(36) NOT NULL,
-    request_hash VARCHAR(64),
-    response_body TEXT,
-    status_code INTEGER NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    menu_item_id VARCHAR(32) NOT NULL,            -- Static catalog ID (e.g. "item-001")
+    name VARCHAR(128) NOT NULL,                   -- Snapshot item name
+    price NUMERIC(12, 2) NOT NULL,                -- Unit price in IDR
+    quantity INTEGER NOT NULL,                    -- Ordered quantity
+    notes VARCHAR(255),                           -- Custom kitchen requests
+    subtotal NUMERIC(12, 2) NOT NULL              -- (price * quantity)
 );
 
--- 4. Tabel Log Diagnostik (Diagnostic Logs)
+CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id);
+
+-- 3. Diagnostic Logs Table
 CREATE TABLE IF NOT EXISTS diagnostic_logs (
     id VARCHAR(36) PRIMARY KEY,
     timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    category VARCHAR(16) NOT NULL,                 -- "NETWORK", "HARDWARE", "UX_BEHAVIOR", "BACKEND"
-    level VARCHAR(16) NOT NULL,                    -- "INFO", "WARN", "ERROR", "CRITICAL"
-    root_cause VARCHAR(64) NOT NULL,               -- Misal: "RAPID_DOUBLE_TAP", "PRINTER_OFFLINE"
-    latency_ms INTEGER DEFAULT 0,
+    category VARCHAR(20) NOT NULL,                -- "NETWORK", "HARDWARE", "UX_BEHAVIOR", "BACKEND"
+    level VARCHAR(10) NOT NULL,                   -- "INFO", "WARN", "ERROR", "CRITICAL"
+    root_cause VARCHAR(64) NOT NULL,              -- Machine-readable error code
+    latency_ms BIGINT DEFAULT 0,
     message TEXT NOT NULL,
-    metadata JSON
+    metadata TEXT
 );
-CREATE INDEX idx_diagnostic_logs_category ON diagnostic_logs(category);
-CREATE INDEX idx_diagnostic_logs_timestamp ON diagnostic_logs(timestamp);
 
--- 5. Tabel Konfigurasi Simulasi Chaos (Chaos Configs)
+CREATE INDEX IF NOT EXISTS idx_diagnostic_logs_timestamp ON diagnostic_logs(timestamp);
+CREATE INDEX IF NOT EXISTS idx_diagnostic_logs_category ON diagnostic_logs(category);
+
+-- 4. Field Chaos Configuration Table
 CREATE TABLE IF NOT EXISTS chaos_configs (
-    id INTEGER PRIMARY KEY CHECK (id = 1),         -- Baris tunggal konfigurasi
+    id SERIAL PRIMARY KEY,
     wifi_offline BOOLEAN DEFAULT FALSE,
     bad_network_latency_ms INTEGER DEFAULT 0,
-    printer_status VARCHAR(16) DEFAULT 'CONNECTED',-- "CONNECTED", "PAPER_OUT", "DISCONNECTED"
+    printer_status VARCHAR(32) DEFAULT 'CONNECTED', -- 'CONNECTED', 'PAPER_OUT', 'DISCONNECTED'
     db_lock_simulated BOOLEAN DEFAULT FALSE,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
@@ -154,187 +147,137 @@ CREATE TABLE IF NOT EXISTS chaos_configs (
 
 ---
 
-## 3. Desain Mesin & Pola Arsitektur Inti
-
-### 3.1 Mesin Idempotensi & Pencegahan Duplikasi (Idempotency Engine)
-
-Pola idempotensi dirancang untuk menjamin bahwa permintaan berulang dengan kunci yang sama **tidak pernah** menghasilkan transaksi ganda.
+## 3. Idempotency State Machine & Guard Engine
 
 ```
-Pengguna Tekan Tombol Bayar
-         │
-         ▼
-[ Client POS ] ──(1. Generate Intent UUID)──> Idempotency-Key: "550e8400-e29b-..."
-         │
-         ├──(2. Optimistic UI <50ms)──> Bersihkan keranjang, tampilkan tiket
-         │
-         ▼
-[ Chaos Interceptor ] (Cek mode Offline / Latency 2500ms)
-         │
-         ▼ (HTTP POST /orders)
-[ Go Gin Backend ]
-         │
-         ▼
-[ GORM DB Transaction ]
-         │
-   ┌─────┴───────────────────────────────┐
-   │ Apakah Key ada di Basis Data?       │
-   └─────┬───────────────────────────────┘
-         │
-   ┌─────┴───────────────────────────────┐
-   ▼                                     ▼
-[ SUDAH ADA ]                       [ BELUM ADA ]
-Log: [BACKEND] Idempotency Hit      Insert `orders` & `order_items`
-Return 200 OK (Existing Order)       Insert `idempotency_records`
-Tanpa Menambah Tiket KDS Baru        Return 201 Created
-                                    KDS Tampilkan Tiket Baru
+[POS Client: Tap Checkout]
+       │
+       ▼
+[Generate or Reuse Idempotency Key (UUID v4)]
+       │
+       ├────────────────────────────────────────┐
+       ▼ (Simulated WiFi Drop = True)           ▼ (Online)
+[Enqueue in LocalStorage (QUEUED_OFFLINE)]   [POST /api/v1/orders with X-Idempotency-Key]
+       │                                        │
+       │ (On WiFi Restoration)                  ▼
+       └──────────────────────────────────> [Go Backend: Check Key in Database]
+                                                │
+                          ┌─────────────────────┴─────────────────────┐
+                          ▼                                           ▼
+                    [Key NOT Found]                             [Key EXISTS]
+                          │                                           │
+                    [Atomic DB Commit]                       [Safe Replay (200 OK)]
+                    [Status: 201 Created]                    [idempotent_replay: true]
+                          │                                           │
+                          └─────────────────────┬─────────────────────┘
+                                                ▼
+                                    [Update UI & KDS Stream]
 ```
 
-### 3.2 Mesin Toleransi Perangkat Keras Printer (Hardware Fault Isolation)
+### 3.1 Idempotency Guarantee
+1. **Uniqueness:** Every unique cart session maintains a single RFC4122 UUID v4 key.
+2. **Replay Safety:** Re-submitting the exact same key returns the existing order record without creating duplicate kitchen tickets or altering inventory.
+3. **Double-Tap Debounce:** In-flight checkout buttons lock for 1500ms, preventing duplicate HTTP requests before they leave the browser.
 
-Ketika kasir mencetak pesanan tetapi printer Bluetooth dalam status `DISCONNECTED` atau `PAPER_OUT`:
-1. Sistem **tidak melempar error gagal order**. Transaksi finansial dan pesanan dapur adalah prioritas tertinggi restoran.
-2. Status cetak tiket diatur menjadi `print_status = "QUEUED_FOR_REPRINT"`.
-3. Di sisi UI KDS dan POS, lencana kuning *"Receipt Queued for Reprint"* berkedip, dilengkapi tombol *"Reprint Receipt"*.
-4. Log terstruktur `[HARDWARE] [PRINTER_OFFLINE]` dicatat lengkap dengan data stempel waktu.
-5. Ketika printer kembali terhubung (`CONNECTED`), event handler memeriksa antrian dan mengizinkan cetak ulang massal (*flush reprint queue*).
+---
 
-### 3.3 Antrian Sinkronisasi Luring (Offline Sync Queue Machine)
-
-Ketika konektivitas WiFi terputus (`wifi_offline = true` atau `navigator.onLine = false`):
+## 4. Hardware Fault Isolation Architecture
 
 ```
-Pesanan Dibuat Saat Offline
-         │
-         ▼
-[ Client LocalStorage Queue ]
-Simpan payload JSON + status: "QUEUED_OFFLINE"
-Badge: "Unsynced Orders: 1"
-         │
-         ▼ (Koneksi WiFi Pulih)
-[ Network Restored Listener ]
-         │
-         ▼ (Kirim Batch)
-POST /api/v1/orders/batch-sync
-Payload: [ Order1, Order2, ... ]
-         │
-         ▼
-[ Go Backend Batch Handler ]
-Looping pemrosesan transaksi ber-Idempotency Key
-Reconcile orders -> Simpan yang belum ada, Lewati yang duplikat
-         │
-         ▼
-Return 200 OK dengan laporan:
-{ "synced_count": 2, "duplicates_skipped": 0 }
-         │
-         ▼
-Client kosongkan antrian offline & ubah label status jadi "SYNCED"
+                 ┌────────────────────────────────┐
+                 │       ORDER COMMITTED          │
+                 │   Database: OK | KDS: OK       │
+                 └──────────────┬─────────────────┘
+                                │
+               ┌────────────────┴────────────────┐
+               ▼                                 ▼
+      [Printer CONNECTED]             [Printer DISCONNECTED]
+               │                                 │
+     [Print Receipt (OK)]             [Tag: QUEUED_FOR_REPRINT]
+                                      [Show Warning in KDS Ticket]
+                                                 │
+                                                 ▼ (Printer Reconnected)
+                                      [User Clicks "Reprint"]
+                                      [Hardware Log: Success]
 ```
 
 ---
 
-## 4. Spesifikasi Kontrak RESTful API
+## 5. Dual-Database Auto-Detection
 
-Seluruh rute API diawali dengan `/api/v1`. Format data bertukar secara konsisten menggunakan JSON (`Content-Type: application/json`).
+The Go backend dynamically initializes the persistence provider based on environment variables:
 
-### 4.1 Ringkasan Endpoint
-
-| Metode | Endpoint | Deskripsi |
-|---|---|---|
-| `GET` | `/api/v1/health` | Pemeriksaan kesehatan server Go dan koneksi basis data. |
-| `GET` | `/api/v1/menu` | Mengambil 6 item menu terlokalisasi (ID, EN, ZH). |
-| `POST`| `/api/v1/orders` | Membuat pesanan baru dengan validasi `X-Idempotency-Key`. |
-| `POST`| `/api/v1/orders/batch-sync`| Sinkronisasi pesanan offline secara massal (*batch*). |
-| `GET` | `/api/v1/orders` | Mengambil seluruh riwayat pesanan aktif untuk KDS & POS. |
-| `PATCH`| `/api/v1/orders/:id/status`| Mengubah status tiket KDS (`PENDING` -> `PREPARING` -> `SERVED`). |
-| `POST`| `/api/v1/orders/:id/reprint`| Memicu cetak ulang struk setelah printer normal. |
-| `GET` | `/api/v1/chaos/config` | Mengambil status sakelar gangguan (*chaos toggles*). |
-| `POST`| `/api/v1/chaos/config` | Memperbarui parameter gangguan (*latency, db lock, dll*). |
-| `GET` | `/api/v1/logs` | Mengambil daftar log diagnostik terstruktur. |
-| `POST`| `/api/v1/logs` | Mengirimkan log dari peramban ke server. |
-
-### 4.2 Contoh Kontrak Detail
-
-#### `POST /api/v1/orders`
-**Request Headers:**
-```http
-Content-Type: application/json
-X-Idempotency-Key: 7b5a8321-789a-4cde-a123-abcdef012345
-```
-
-**Request Body:**
-```json
-{
-  "idempotency_key": "7b5a8321-789a-4cde-a123-abcdef012345",
-  "table_number": "T-03",
-  "customer_name": "Kasir 1 / Meja 3",
-  "payment_method": "QRIS",
-  "items": [
-    {
-      "menu_item_id": "m1",
-      "name": "Nasi Goreng Spesial RestoPulse",
-      "price": 38000,
-      "quantity": 2,
-      "notes": "Pedas sedang, tanpa acar"
-    },
-    {
-      "menu_item_id": "m4",
-      "name": "Es Teh Manis Melati",
-      "price": 8000,
-      "quantity": 2,
-      "notes": "Es sedikit"
+```go
+func InitDB(dbPath string) (*gorm.DB, error) {
+    postgresURL := os.Getenv("POSTGRES_URL")
+    if postgresURL == "" {
+        postgresURL = os.Getenv("DATABASE_URL")
     }
-  ],
-  "client_created_at": "2026-10-27T19:35:00Z"
+
+    var dialector gorm.Dialector
+    if postgresURL != "" {
+        dialector = postgres.Open(postgresURL)
+    } else {
+        if dbPath == "" {
+            dbPath = os.Getenv("DATABASE_PATH")
+            if dbPath == "" { dbPath = "restopulse.db" }
+        }
+        dialector = sqlite.Open(dbPath)
+    }
+
+    DB, err = gorm.Open(dialector, &gorm.Config{...})
+    // Auto-migrate tables
+    DB.AutoMigrate(&models.Order{}, &models.OrderItem{}, &models.DiagnosticLog{}, &models.ChaosConfig{})
+    return DB, nil
 }
 ```
-
-**Response (201 Created):**
-```json
-{
-  "status": "success",
-  "message": "Order processed successfully",
-  "data": {
-    "id": "e98e4d3a-1234-4567-89ab-cdef01234567",
-    "order_number": "#RP-1008",
-    "table_number": "T-03",
-    "customer_name": "Kasir 1 / Meja 3",
-    "total_amount": 92000,
-    "payment_method": "QRIS",
-    "payment_status": "PAID",
-    "kds_status": "PENDING",
-    "print_status": "PRINTED",
-    "sync_status": "SYNCED",
-    "created_at": "2026-10-27T19:35:00Z"
-  }
-}
-```
-
-**Response (200 OK - Idempotent Replay):**
-Jika dikirim ulang dengan `Idempotency-Key` yang sama, server mengembalikan data pesanan yang sudah ada dengan header `X-Idempotent-Replay: true`.
 
 ---
 
-## 5. Middleware Chaos & Diagnostik Terstruktur
+## 6. RESTful API Contracts
 
-Di sisi server Go, middleware memeriksa apakah simulasi aktif:
-1. **Latency Delay:**
-   ```go
-   if chaosConfig.BadNetworkLatencyMs > 0 {
-       time.Sleep(time.Duration(chaosConfig.BadNetworkLatencyMs) * time.Millisecond)
-   }
-   ```
-2. **Database Lock Emulation:**
-   ```go
-   if chaosConfig.DBLockSimulated {
-       c.JSON(http.StatusInternalServerError, gin.H{
-           "error": "pq: deadlock detected / sqlite3: database is locked",
-           "code": "DB_LOCK_CONTENTION",
-           "root_cause": "BACKEND",
-       })
-       c.Abort()
-       return
-   }
-   ```
-3. **Structured Logger:**
-   Mencatat durasi setiap *handler*, stempel waktu mikrodetik, dan mempublikasikan log terstruktur ke tabel `diagnostic_logs`.
+### `GET /api/v1/health`
+Checks backend service and database health.
+- **Response 200 OK:**
+  ```json
+  {
+    "status": "ok",
+    "database": "connected",
+    "service": "RestoPulse Edge Engine",
+    "version": "1.0.0"
+  }
+  ```
+
+### `GET /api/v1/menu`
+Retrieves curated F&B items with complete `en`, `id`, and `zh` translations.
+- **Response 200 OK:** Array of menu items including price, image URL, category, and badge.
+
+### `POST /api/v1/orders`
+Submits a new order with `X-Idempotency-Key` protection.
+- **Headers:** `X-Idempotency-Key: <UUID>`
+- **Response 201 Created:** Created order object.
+- **Response 200 OK:** Safe idempotent replay if key already exists.
+
+### `POST /api/v1/orders/batch-sync`
+Reconciles locally queued offline orders in bulk.
+- **Payload:** `{ "orders": [ ... ] }`
+- **Response 200 OK:**
+  ```json
+  {
+    "synced_count": 3,
+    "duplicates_skipped": 0,
+    "orders": [ ... ]
+  }
+  ```
+
+### `PATCH /api/v1/orders/:id/status`
+Updates kitchen ticket status (`PENDING` $\rightarrow$ `PREPARING` $\rightarrow$ `SERVED`).
+
+### `POST /api/v1/orders/:id/reprint`
+Processes thermal receipt reprint after hardware recovery.
+
+### `GET /api/v1/chaos/config` & `POST /api/v1/chaos/config`
+Reads and updates simulated field chaos parameters (latency, printer status, simulated DB lock).
+
+### `GET /api/v1/logs`, `POST /api/v1/logs`, `DELETE /api/v1/logs`
+Manages structured diagnostic and UX friction audit logs.

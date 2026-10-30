@@ -2,24 +2,48 @@ package database
 
 import (
 	"log"
+	"os"
 	"restopulse-backend/models"
 	"time"
 
 	"github.com/glebarez/sqlite"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
 
 var DB *gorm.DB
 
-// InitDB initializes SQLite with GORM and runs auto-migrations
+// InitDB initializes SQLite or PostgreSQL based on environment variables
 func InitDB(dbPath string) (*gorm.DB, error) {
-	if dbPath == "" {
-		dbPath = "restopulse.db"
+	// 1. Detect PostgreSQL from Vercel Postgres or environment
+	postgresURL := os.Getenv("POSTGRES_URL")
+	if postgresURL == "" {
+		postgresURL = os.Getenv("POSTGRES_PRISMA_URL")
+	}
+	if postgresURL == "" {
+		postgresURL = os.Getenv("DATABASE_URL")
+	}
+
+	var dialector gorm.Dialector
+	var dbType string
+
+	if postgresURL != "" {
+		dialector = postgres.Open(postgresURL)
+		dbType = "PostgreSQL (Cloud / Vercel Postgres)"
+	} else {
+		if dbPath == "" {
+			dbPath = os.Getenv("DATABASE_PATH")
+			if dbPath == "" {
+				dbPath = "restopulse.db"
+			}
+		}
+		dialector = sqlite.Open(dbPath)
+		dbType = "SQLite (Local: " + dbPath + ")"
 	}
 
 	var err error
-	DB, err = gorm.Open(sqlite.Open(dbPath), &gorm.Config{
+	DB, err = gorm.Open(dialector, &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Warn),
 	})
 	if err != nil {
@@ -65,7 +89,7 @@ func InitDB(dbPath string) (*gorm.DB, error) {
 				Level:     "INFO",
 				RootCause: "SYSTEM_INITIALIZED",
 				LatencyMs: 4,
-				Message:   "RestoPulse Edge Service initialized. Local SQLite ready.",
+				Message:   "RestoPulse Edge Service initialized. Database ready: " + dbType,
 			},
 			{
 				ID:        "log-init-002",
@@ -80,6 +104,6 @@ func InitDB(dbPath string) (*gorm.DB, error) {
 		DB.Create(&sampleLogs)
 	}
 
-	log.Printf("RestoPulse database connected and migrated successfully: %s", dbPath)
+	log.Printf("RestoPulse database connected and migrated successfully: %s", dbType)
 	return DB, nil
 }

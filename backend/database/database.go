@@ -32,7 +32,10 @@ func InitDB(dbPath string) (*gorm.DB, error) {
 		dialector = postgres.Open(postgresURL)
 		dbType = "PostgreSQL (Cloud / Vercel Postgres)"
 	} else {
-		if dbPath == "" {
+		// Detect Vercel / serverless environment with read-only root filesystem
+		if os.Getenv("VERCEL") != "" || os.Getenv("AWS_LAMBDA_FUNCTION_NAME") != "" {
+			dbPath = "/tmp/restopulse.db"
+		} else if dbPath == "" {
 			dbPath = os.Getenv("DATABASE_PATH")
 			if dbPath == "" {
 				dbPath = "restopulse.db"
@@ -47,7 +50,21 @@ func InitDB(dbPath string) (*gorm.DB, error) {
 		Logger: logger.Default.LogMode(logger.Warn),
 	})
 	if err != nil {
-		return nil, err
+		// If PostgreSQL failed, try falling back to SQLite in /tmp
+		if postgresURL != "" {
+			log.Printf("⚠️ Warning: PostgreSQL connection failed (%v). Falling back to ephemeral SQLite at /tmp/restopulse.db", err)
+			dbPath = "/tmp/restopulse.db"
+			dialector = sqlite.Open(dbPath)
+			dbType = "SQLite Fallback (/tmp/restopulse.db)"
+			DB, err = gorm.Open(dialector, &gorm.Config{
+				Logger: logger.Default.LogMode(logger.Warn),
+			})
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			return nil, err
+		}
 	}
 
 	// Auto migrate entities

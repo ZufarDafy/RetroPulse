@@ -11,16 +11,22 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func main() {
-	// Database path from environment or default
+var router *gin.Engine
+
+func setupRouter() *gin.Engine {
+	// Database path from environment or default (use /tmp on Vercel/serverless)
 	dbPath := os.Getenv("DATABASE_PATH")
 	if dbPath == "" {
-		dbPath = "restopulse.db"
+		if os.Getenv("VERCEL") != "" || os.Getenv("AWS_LAMBDA_FUNCTION_NAME") != "" {
+			dbPath = "/tmp/restopulse.db"
+		} else {
+			dbPath = "restopulse.db"
+		}
 	}
 
 	_, err := database.InitDB(dbPath)
 	if err != nil {
-		log.Fatalf("Fatal: Failed to initialize SQLite database: %v", err)
+		log.Printf("⚠️ Database initialization warning: %v", err)
 	}
 
 	r := gin.Default()
@@ -28,36 +34,68 @@ func main() {
 	// Apply CORS
 	r.Use(middleware.CORSMiddleware())
 
-	// Healthcheck
-	r.GET("/api/v1/health", func(c *gin.Context) {
+	// Healthcheck handler
+	healthHandler := func(c *gin.Context) {
+		dbStatus := "connected"
+		if database.DB == nil {
+			dbStatus = "database disconnected"
+		}
 		c.JSON(http.StatusOK, gin.H{
 			"status":   "ok",
-			"database": "connected",
+			"database": dbStatus,
 			"service":  "RestoPulse Edge Engine",
 			"version":  "1.0.0",
 		})
-	})
+	}
 
-	api := r.Group("/api/v1")
-	{
-		// Menu
-		api.GET("/menu", handlers.GetMenu)
+	// Support /health, /v1/health, and /api/v1/health regardless of rewrite path stripping
+	r.GET("/health", healthHandler)
 
-		// Orders & KDS
-		api.GET("/orders", handlers.GetOrders)
-		api.POST("/orders", handlers.CreateOrder)
-		api.POST("/orders/batch-sync", handlers.BatchSyncOrders)
-		api.PATCH("/orders/:id/status", handlers.UpdateKDSStatus)
-		api.POST("/orders/:id/reprint", handlers.ReprintReceipt)
+	prefixes := []string{"/api/v1", "/v1"}
+	for _, prefix := range prefixes {
+		r.GET(prefix+"/health", healthHandler)
 
-		// Chaos Simulator
-		api.GET("/chaos/config", handlers.GetChaosConfig)
-		api.POST("/chaos/config", handlers.UpdateChaosConfig)
+		api := r.Group(prefix)
+		{
+			// Menu
+			api.GET("/menu", handlers.GetMenu)
 
-		// Diagnostic Logs
-		api.GET("/logs", handlers.GetLogs)
-		api.POST("/logs", handlers.CreateLog)
-		api.DELETE("/logs", handlers.ClearLogs)
+			// Orders & KDS
+			api.GET("/orders", handlers.GetOrders)
+			api.POST("/orders", handlers.CreateOrder)
+			api.POST("/orders/batch-sync", handlers.BatchSyncOrders)
+			api.PATCH("/orders/:id/status", handlers.UpdateKDSStatus)
+			api.POST("/orders/:id/reprint", handlers.ReprintReceipt)
+
+			// Chaos Simulator
+			api.GET("/chaos/config", handlers.GetChaosConfig)
+			api.POST("/chaos/config", handlers.UpdateChaosConfig)
+
+			// Diagnostic Logs
+			api.GET("/logs", handlers.GetLogs)
+			api.POST("/logs", handlers.CreateLog)
+			api.DELETE("/logs", handlers.ClearLogs)
+		}
+	}
+
+	return r
+}
+
+func init() {
+	router = setupRouter()
+}
+
+// Handler exports the HTTP handler for Vercel Serverless Function invocations
+func Handler(w http.ResponseWriter, r *http.Request) {
+	if router == nil {
+		router = setupRouter()
+	}
+	router.ServeHTTP(w, r)
+}
+
+func main() {
+	if router == nil {
+		router = setupRouter()
 	}
 
 	port := os.Getenv("PORT")
@@ -66,7 +104,7 @@ func main() {
 	}
 
 	log.Printf("🚀 RestoPulse Backend running on port :%s", port)
-	if err := r.Run(":" + port); err != nil {
+	if err := router.Run(":" + port); err != nil {
 		log.Fatalf("Failed to run server: %v", err)
 	}
 }
